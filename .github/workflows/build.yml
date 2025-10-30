@@ -35,6 +35,7 @@ jobs:
           RELEASE_BRANCH: deploy
        run: |
             set -e
+            export TZ=Asia/Shanghai
             mv  -v dist      /tmp/dist
             cp  -v README.md /tmp/dist
             git config user.name "github-actions[bot]"
