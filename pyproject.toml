@@ -1,0 +1,13 @@
+[project]
+name = "edgeone-ips"
+description = "EdgeOne (国内版) 源站防护 IP 列表"
+authors = [
+    {name = "Joseph Chris", email = "joseph@josephcz.xyz"},
+]
+dependencies = ["tencentcloud-sdk-python>=3.0.1481"]
+requires-python = "==3.12.*"
+readme = "README.md"
+license = "CC0-1.0"
+
+[tool.pdm]
+distribution = false

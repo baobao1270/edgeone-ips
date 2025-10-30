@@ -1,0 +1,60 @@
+name: Fetch EegeOne IP Update
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 */3 * *"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+     - name: Checkout repository
+       uses: actions/checkout@v5
+     - name: Set up Python 3.12
+       uses: actions/setup-python@v5
+       with:
+        python-version: "3.12"
+     - name: Setup PDM (v4.4)
+       uses: pdm-project/setup-pdm@94a823180e06fcde4ad29308721954a521c96ed0
+       with:
+        python-version: "3.12"
+     - name: Install dependencies
+       run:  pdm install
+     - name: Fetch EegeOne IP updates
+       run:  pdm run run.py
+       env:
+        TENCENTCLOUD_SECRET_ID:       ${{ secrets.TENCENTCLOUD_SECRET_ID }}
+        TENCENTCLOUD_SECRET_KEY:      ${{ secrets.TENCENTCLOUD_SECRET_KEY }}
+        TENCENTCLOUD_EDGEONE_ZONE_ID: ${{ secrets.TENCENTCLOUD_EDGEONE_ZONE_ID }}
+     - name: Commit artifacts        
+       env:
+          RELEASE_BRANCH: deploy
+       run: |
+            set -e
+            mv  -v dist      /tmp/dist
+            cp  -v README.md /tmp/dist
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git fetch
+            if git ls-remote --exit-code --heads origin $RELEASE_BRANCH; then
+                echo "BRANCH $RELEASE_BRANCH exist, checking out to it..."
+                git checkout $RELEASE_BRANCH
+            else
+                echo "BRANCH $RELEASE_BRANCH not exist, creating as orphan..."
+                git checkout --orphan $RELEASE_BRANCH
+            fi
+            cp -vr .git /tmp/deploy.git
+            mkdir  -pv  /tmp/deploy && cd /tmp/deploy
+            mv -v       /tmp/dist/*       /tmp/deploy
+            cp -vr      /tmp/deploy.git   /tmp/deploy/.git
+            git add -A
+            if ! git diff --cached --quiet; then
+                git commit -m "auto generated commit by CI at $(date -Iseconds) [skip ci]"
+                git push -fu origin deploy
+            else
+                echo "No changes to commit."
+            fi
